@@ -31,3 +31,19 @@ helm_globals = {
 ```
 
 This will create a single node k3s cluster able to support workload on it.
+
+## Module reference
+
+Use :
+```hcl
+module "helm-windforlife" {
+  source       = "../..//modules/helm"
+  helm_globals = var.helm_globals
+  set_value = var.set_value
+  depends_on   = [module.k3s-cluster.k3s_id]
+}
+```
+
+For module reference
+
+- https://github.com/hashicorp/terraform/issues/28755

@@ -1,0 +1,27 @@
+---
+name: CI dev
+on:
+  push:
+    branches:
+      - "main"
+    paths:
+      - "k3d/environments/dev/**"
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - "main"
+    paths:
+      - "k3d/environments/dev/**"
+  workflow_dispatch:
+jobs:
+  tf-k3d:
+    uses: ixxeL-DevOps/gha-templates/.github/workflows/terraform.yaml@main
+    with:
+      workingdir: k3d/environments/dev
+      environment: dev
+    secrets:
+      git-token: ${{ secrets.PAT }}
+    

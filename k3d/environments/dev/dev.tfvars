@@ -15,7 +15,7 @@ ports_cfg = [
 
 helm_globals = {
   name  = "windforlife"
-  chart = "helm-chart"
+  chart = "../../helm-chart"
   namespace = "windforlife"
   create_namespace = true
 }

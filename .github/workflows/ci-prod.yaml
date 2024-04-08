@@ -1,9 +1,11 @@
 ---
-name: CI
+name: CI prod
 on:
   push:
     branches:
       - "main"
+    paths:
+      - "k3d/environments/prod/**"
   pull_request:
     types:
       - opened
@@ -11,12 +13,15 @@ on:
       - reopened
     branches:
       - "main"
+    paths:
+      - "k3d/environments/prod/**"
   workflow_dispatch:
 jobs:
   tf-k3d:
-    uses: ixxeL-DevOps/gha-templates/.github/workflows/__terraform__.yaml@main
+    uses: ixxeL-DevOps/gha-templates/.github/workflows/terraform.yaml@main
     with:
-      workingdir: k3d
+      workingdir: k3d/environments/prod
+      environment: prod
     secrets:
       git-token: ${{ secrets.PAT }}
     
