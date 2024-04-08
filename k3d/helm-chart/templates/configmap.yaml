@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-postgresql-app
+  labels:
+    {{- include "windforlife.labels" . | nindent 4 }}
+data:
+  postgresql-port: {{ include "windforlife.postgresql.port" . }}
+  postgresql-host: {{ include "windforlife.postgresql.hostname" . }}
+  postgresql-db-name: {{ include "windforlife.postgresql.database" . }}
+  postgresql-user: {{ include "windforlife.postgresql.username" . }}

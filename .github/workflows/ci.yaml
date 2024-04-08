@@ -1,0 +1,22 @@
+---
+name: CI
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - "main"
+  workflow_dispatch:
+jobs:
+  tf-k3d:
+    uses: ixxeL-DevOps/gha-templates/.github/workflows/__terraform__.yaml@main
+    with:
+      workingdir: k3d
+    secrets:
+      git-token: ${{ secrets.PAT }}
+    

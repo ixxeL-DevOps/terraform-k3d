@@ -1,0 +1,34 @@
+repos:
+- repo: https://github.com/antonbabenko/pre-commit-terraform
+  rev: v1.77.0 # Get the latest from: https://github.com/antonbabenko/pre-commit-terraform/releases
+  hooks:
+    - id: terraform_fmt
+      args:
+        - --args=-no-color
+        - --args=-diff
+        - --args=-write=false
+        - --args=-recursive
+    - id: terraform_docs
+      args:
+        - --hook-config=--create-file-if-not-exist=true
+    - id: terraform_tflint
+      args:
+        - --args=--disable-rule=terraform_typed_variables
+    - id: terraform_validate
+      args:
+        - --args=-json
+        - --hook-config=--retry-once-with-cleanup=true
+    - id: terraform_tfsec
+- repo: https://github.com/gruntwork-io/pre-commit
+  rev: v0.1.17
+  hooks:
+  - id: helmlint
+    args: [project-windforlife/helm-chart]
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+  - id: end-of-file-fixer
+  - id: trailing-whitespace
+  - id: check-yaml
+    args: [--allow-multiple-documents]
+    exclude: ^project-windforlife/helm-chart/templates/

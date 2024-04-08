@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "windforlife.fullname" . }}
+  labels:
+    {{- include "windforlife.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.app.autoscaling.enabled }}
+  replicas: {{ .Values.app.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "windforlife.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/ext-postgres-config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- if not .Values.postgresql.selfManaged.enabled }}
+        checksum/ext-postgres-secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      {{- end }}
+      {{- with .Values.app.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "windforlife.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.app.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "windforlife.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.app.podSecurityContext | nindent 8 }}
+      initContainers:
+      - name: check-db-ready
+        image: {{ include "windforlife.postgresql.iniContainer.image" . }}
+        command: ['sh', '-c',
+          "until pg_isready -h ${POSTGRESQL_HOST} -p ${POSTGRESQL_PORT} -d ${POSTGRESQL_DB_NAME} -U ${POSTGRESQL_USER} ;
+          do echo waiting for database ${POSTGRESQL_DB_NAME} of postgresql instance ${POSTGRESQL_HOST} on port ${POSTGRESQL_PORT}; sleep 2; done;"]
+        resources:
+          limits:
+            cpu: {{ default "5m" .Values.app.resources.limits.cpu | quote }}
+            memory: {{ default "64Mi" .Values.app.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ default "5m" .Values.app.resources.requests.cpu | quote }}
+            memory: {{ default "64Mi" .Values.app.resources.requests.memory | quote }}
+        env:
+          - name: POSTGRESQL_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Release.Name }}-postgresql-app
+                key: postgresql-port
+          - name: POSTGRESQL_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Release.Name }}-postgresql-app
+                key: postgresql-host
+          - name: POSTGRESQL_DB_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Release.Name }}-postgresql-app
+                key: postgresql-db-name
+          - name: POSTGRESQL_USER
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Release.Name }}-postgresql-app
+                key: postgresql-user
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.app.securityContext | nindent 12 }}
+          image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.app.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            limits:
+              cpu: {{ default "5m" .Values.app.resources.limits.cpu | quote }}
+              memory: {{ default "64Mi" .Values.app.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ default "5m" .Values.app.resources.requests.cpu | quote }}
+              memory: {{ default "64Mi" .Values.app.resources.requests.memory | quote }}
+          env:
+            - name: MY_NEEDED_ENV_VAR
+              value: {{ .Values.app.env.MY_NEEDED_ENV_VAR | quote }}
+            - name: MY_OTHER_NEEDED_ENV_VAR
+              value: {{ .Values.app.env.MY_OTHER_NEEDED_ENV_VAR | quote }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "common.names.fullname" .Subcharts.redis }}
+                  key: redis-password
+            - name: POSTGRESQL_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-postgresql-app
+                  key: postgresql-port
+            - name: POSTGRESQL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-postgresql-app
+                  key: postgresql-host
+            - name: POSTGRESQL_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-postgresql-app
+                  key: postgresql-db-name
+            - name: POSTGRESQL_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-postgresql-app
+                  key: postgresql-user
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "windforlife.postgresql.passwordSecretName" . }}
+                  key: {{ include "windforlife.postgresql.passwordSecretKey" . }}
+      {{- with .Values.app.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.app.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.app.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

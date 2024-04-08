@@ -1,0 +1,47 @@
+{{- if .Values.app.ingress.enabled -}}
+{{- $fullName := include "windforlife.fullname" . -}}
+{{- $svcPort := .Values.app.service.port -}}
+{{- $paths := .Values.app.ingress.paths -}}
+{{- $pathType := .Values.app.ingress.pathType -}}
+{{- $extraPaths := .Values.app.ingress.extraPaths -}}
+apiVersion: {{ include "windforlife.apiVersion.ingress" . }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "windforlife.labels" . | nindent 4 }}
+  {{- with .Values.app.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.app.ingress.className }}
+  ingressClassName: {{ .Values.app.ingress.className }}
+  {{- end }}
+  rules:
+    {{- range $host := .Values.app.ingress.hosts }}
+    - host: {{ $host }}
+      http:
+        paths:
+          {{- if $extraPaths }}
+          {{- toYaml $extraPaths | nindent 10 }}
+          {{- end }}
+          {{- range $p := $paths }}
+          - path: {{ $p }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  {{- if kindIs "float64" $svcPort }}
+                  number: {{ $svcPort }}
+                  {{- else }}
+                  name: {{ $svcPort }}
+                  {{- end }}
+          {{- end }}
+    {{- end }}
+  {{- if .Values.app.ingress.tls }}
+  tls:
+    {{- toYaml .Values.app.ingress.tls | nindent 4 }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,94 @@
+nameOverride: ""
+fullnameOverride: ""
+kubeVersionOverride: ""
+# Override APIVersions
+# If you want to template helm charts but cannot access k8s API server
+# you can set api versions here
+apiVersionOverrides:
+  # -- String to override apiVersion of GKE resources rendered by this helm chart
+  autoscaling: "" # autoscaling/v2
+  # -- String to override apiVersion of ingresses rendered by this helm chart
+  ingress: "" # networking.k8s.io/v1beta1
+
+app:
+  replicaCount: 1
+  image:
+    repository: nginx
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  initImage:
+    repository: nginx
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  imagePullSecrets: []
+  # We want to inject env vars in our container app.
+  env:
+    MY_NEEDED_ENV_VAR: 14
+    MY_OTHER_NEEDED_ENV_VAR: "development"
+  serviceAccount:
+    create: true
+    name: ""
+  service:
+    type: ClusterIP
+    port: 80
+  ingress:
+    enabled: true
+    className: "traefik"
+    annotations: {}
+    labels: {}
+    hosts:
+      - alertmanager.domain.com
+    paths:
+      - /
+    pathType: ImplementationSpecific
+    extraPaths: []
+      # - path: /*
+      #   pathType: Prefix
+      #   backend:
+      #     service:
+      #       name: ssl-redirect
+      #       port:
+      #         name: use-annotation
+    tls:
+    - secretName: alertmanager-general-tls
+      hosts:
+      - alertmanager.example.com
+  resources:
+    limits:
+      cpu: 5m
+      memory: 64Mi
+    requests:
+      cpu: 5m
+      memory: 64Mi
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+# Redis self managed configuration (bitnami subchart)
+redis:
+  auth:
+    enabled: true
+    password: "mysupersecretredispassword"
+
+# Postgresql self managed configuration (bitnami subchart)
+postgresql:
+  selfManaged:
+    # Set to true to enable Subchart
+    enabled: true
+  global:
+    postgresql:
+      auth:
+        username: "postgres"
+        password: "postgressecret"
+        database: "mydatabase"
+
+# External Postgresql configuration
+externalPostgresql:
+  postgresqlUsername: "postgres"
+  postgresqlPassword: "postgressecret"
+  postgresqlDatabase: "mydatabase"
+  postgresqlPort: ""
+  postgresqlHost: ""
