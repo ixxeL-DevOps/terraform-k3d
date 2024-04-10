@@ -23,3 +23,8 @@ variable "set_value" {
   }))
   default = []
 }
+
+variable "kubeconfig_path" {
+  type        = string
+  default     = "~/.kube/config"
+}
